@@ -18,10 +18,11 @@ interface AuthContextType {
   user: User | null;
   bookClub: BookClub | null;
   isLoading: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string, name?: string) => Promise<void>;
   logout: () => void;
   createBookClub: (name: string) => Promise<void>;
   joinBookClub: (inviteCode: string) => Promise<void>;
+  checkUserExists: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -56,12 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (bookClub) localStorage.setItem('current_bookclub', JSON.stringify(bookClub));
   }, [user, bookClub]);
 
-  const login = async (email: string) => {
+  const checkUserExists = async (email: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/.netlify/functions/users?email=${encodeURIComponent(email)}`);
+      if (!response.ok) throw new Error('Failed to check user');
+      const user = await response.json();
+      return !!user;
+    } catch (error) {
+      console.error('Check user error:', error);
+      throw error;
+    }
+  };
+
+  const login = async (email: string, name?: string) => {
     try {
       // Try to find or create user in MongoDB
       const response = await fetch('/.netlify/functions/users', {
         method: 'POST',
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email, name })
       });
 
       if (!response.ok) throw new Error('Failed to login');
@@ -148,7 +161,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     createBookClub,
-    joinBookClub
+    joinBookClub,
+    checkUserExists
   };
 
   return (

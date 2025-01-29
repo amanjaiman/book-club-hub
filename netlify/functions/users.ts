@@ -49,7 +49,7 @@ export const handler: Handler = async (event) => {
         }
 
         const userData = JSON.parse(event.body);
-        const { email } = userData;
+        const { email, name } = userData;
 
         // Check if user already exists
         const existingUser = await users.findOne({ email });
@@ -63,7 +63,7 @@ export const handler: Handler = async (event) => {
         // Create new user
         const newUser: User = {
           id: Date.now().toString(),
-          name: email.split('@')[0],
+          name: name || email.split('@')[0],
           email
         };
 

@@ -34,10 +34,10 @@ export default function Dashboard() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20 md:pb-0">
       <div className="flex items-center gap-3">
         <HomeIcon className="w-7 h-7 text-primary-500" />
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
+        <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
           Dashboard
         </h1>
       </div>
@@ -57,9 +57,9 @@ export default function Dashboard() {
             <div className="glass-card">
               <div className="flex items-center gap-3 mb-4">
                 <CalendarIcon className="w-6 h-6 text-primary-500" />
-                <h2 className="text-xl font-semibold text-surface-900">Book Setup in Progress</h2>
+                <h2 className="text-lg md:text-xl font-semibold text-surface-900">Book Setup in Progress</h2>
               </div>
-              <p className="text-surface-600">
+              <p className="text-sm md:text-base text-surface-600">
                 {members.find(m => m.id === currentBook.selectedBy)?.name || 'The selector'} is currently setting up meeting dates for "{currentBook.title}".
                 You'll be notified when the book is ready to start reading!
               </p>
@@ -76,9 +76,9 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="glass-card"
           >
-            <h2 className="text-2xl font-bold text-surface-900 mb-4">Currently Reading</h2>
-            <div className="flex gap-6">
-              <div className="w-32 h-48 bg-surface-100 rounded-lg overflow-hidden">
+            <h2 className="text-xl md:text-2xl font-bold text-surface-900 mb-4">Currently Reading</h2>
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="w-full md:w-32 h-48 bg-surface-100 rounded-lg overflow-hidden">
                 {currentBook.coverUrl && (
                   <img 
                     src={currentBook.coverUrl} 
@@ -88,11 +88,11 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-surface-900">{currentBook.title}</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-surface-900">{currentBook.title}</h3>
                 <p className="text-surface-600">{currentBook.author}</p>
                 <div className="mt-4 flex items-center gap-2">
                   <ClockIcon className="w-5 h-5 text-primary-500" />
-                  <span className="text-surface-700">
+                  <span className="text-sm md:text-base text-surface-700">
                     Started on {format(new Date(currentBook.startDate), 'MMM d, yyyy')}
                   </span>
                 </div>
@@ -118,7 +118,7 @@ export default function Dashboard() {
                   <h4 className="font-medium text-primary-900">Next Meeting</h4>
                 </div>
                 <p className="text-lg font-medium text-primary-700">
-                  {format(new Date(nextMeeting.date), 'EEEE, MMMM d, yyyy')}
+                  {format(new Date(`${nextMeeting.date}T${nextMeeting.startTime}`), 'EEEE, MMMM d, yyyy')}
                 </p>
                 <p className="text-primary-600">
                   {nextMeeting.startTime} - {nextMeeting.endTime}
@@ -173,7 +173,7 @@ export default function Dashboard() {
                         }`}
                       >
                         <p className="font-medium text-surface-900">
-                          {format(new Date(meeting.date), 'EEEE, MMMM d, yyyy')}
+                          {format(new Date(`${meeting.date}T${meeting.startTime}`), 'EEEE, MMMM d, yyyy')}
                         </p>
                         <p className="text-sm text-surface-600">
                           {meeting.startTime} - {meeting.endTime}

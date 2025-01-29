@@ -132,43 +132,45 @@ export default function BookClubList() {
   const bookClubs = getUserBookClubs();
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto p-6">
-      <div className="flex items-center gap-3">
-        <BookOpenIcon className="w-7 h-7 text-primary-500" />
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
-          My Book Clubs
-        </h1>
+    <div className="space-y-4 sm:space-y-8 max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
         <div className="flex items-center gap-3">
-            <span className="text-surface-600">
-              Logged in as <span className="font-medium text-surface-900">{user?.name}</span>
-            </span>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 text-surface-600 hover:text-surface-900 rounded-lg hover:bg-surface-100/50 transition-colors"
-              title="Logout"
-            >
-              <ArrowRightOnRectangleIcon className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
-          </div>
+          <BookOpenIcon className="w-7 h-7 text-primary-500" />
+          <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
+            My Book Clubs
+          </h1>
+        </div>
+        <div className="flex flex-row items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto border-t sm:border-0 mt-3 sm:mt-0 pt-3 sm:pt-0">
+          <span className="text-sm sm:text-base text-surface-600">
+            Logged in as <span className="font-medium text-surface-900">{user?.name}</span>
+          </span>
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-surface-600 hover:text-surface-900 rounded-lg hover:bg-surface-100/50 transition-colors"
+            title="Logout"
+          >
+            <ArrowRightOnRectangleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
 
-      <div className="glass-card">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="glass-card p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {bookClubs.map((club, index) => (
             <motion.div
               key={club.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="glass-card cursor-pointer hover:ring-2 hover:ring-primary-100 transition-all"
+              className="glass-card p-4 cursor-pointer hover:ring-2 hover:ring-primary-100 transition-all"
               onClick={() => {
                 localStorage.setItem('current_bookclub', JSON.stringify(club));
                 window.location.reload();
               }}
             >
-              <h3 className="text-xl font-semibold text-surface-900 mb-2">{club.name}</h3>
-              <p className="text-surface-600">{club.members.length} members</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-surface-900 mb-2">{club.name}</h3>
+              <p className="text-sm sm:text-base text-surface-600">{club.members.length} members</p>
             </motion.div>
           ))}
         </div>
@@ -177,23 +179,23 @@ export default function BookClubList() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+            className="text-center py-8 sm:py-12"
           >
-            <p className="text-xl font-medium text-surface-900 mb-2">Welcome to Book Club!</p>
-            <p className="text-surface-600 mb-6">You haven't joined any book clubs yet.</p>
-            <div className="flex justify-center gap-3">
+            <p className="text-lg sm:text-xl font-medium text-surface-900 mb-2">Welcome to Book Club Hub!</p>
+            <p className="text-sm sm:text-base text-surface-600 mb-6">You haven't joined any book clubs yet.</p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm sm:text-base rounded-lg hover:bg-primary-700 transition-colors"
               >
-                <PlusIcon className="w-5 h-5" />
+                <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 Create Your First Club
               </button>
               <button
                 onClick={() => setShowJoinModal(true)}
-                className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:text-white border border-primary-600 rounded-lg hover:bg-primary-600 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 text-primary-600 hover:text-white text-sm sm:text-base border border-primary-600 rounded-lg hover:bg-primary-600 transition-colors"
               >
-                <UserGroupIcon className="w-5 h-5" />
+                <UserGroupIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 Join Existing Club
               </button>
             </div>

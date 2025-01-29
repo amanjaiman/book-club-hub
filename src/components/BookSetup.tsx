@@ -153,7 +153,7 @@ export default function BookSetup() {
               >
                 <div className="space-y-1">
                   <p className="font-medium text-surface-900">
-                    {format(new Date(meeting.date), 'EEEE, MMMM d, yyyy')}
+                    {format(new Date(`${meeting.date}T${meeting.startTime}`), 'EEEE, MMMM d, yyyy')}
                   </p>
                   <p className="text-sm text-surface-600">
                     {meeting.startTime} - {meeting.endTime}

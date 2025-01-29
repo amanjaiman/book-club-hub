@@ -4,16 +4,33 @@ import { BookOpenIcon, UserIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 
 export default function Auth() {
-  const { user, bookClub, login, logout, createBookClub, joinBookClub } = useAuth();
+  const { user, bookClub, login, logout, createBookClub, joinBookClub, checkUserExists } = useAuth();
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [bookClubName, setBookClubName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [view, setView] = useState<'login' | 'create' | 'join'>('login');
+  const [isNewUser, setIsNewUser] = useState(false);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const exists = await checkUserExists(email);
+      if (!exists) {
+        setIsNewUser(true);
+      } else {
+        await login(email);
+        setView('create');
+      }
+    } catch (error) {
+      console.error('Email check failed:', error);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email);
+      await login(email, name);
       setView('create');
     } catch (error) {
       console.error('Login failed:', error);
@@ -137,20 +154,44 @@ export default function Auth() {
               )}
             </>
           ) : (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/50 border border-surface-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-100 outline-none transition-all"
-                required
-              />
-              <button 
-                type="submit" 
-                className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            <form onSubmit={isNewUser ? handleLogin : handleEmailSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-surface-700 mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 rounded-lg bg-white/50 border border-surface-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                  placeholder="Enter your email"
+                />
+              </div>
+              
+              {isNewUser && (
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-surface-700 mb-1">
+                    Your Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 rounded-lg bg-white/50 border border-surface-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                    placeholder="Enter your name"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors"
               >
-                Continue with Email
+                {isNewUser ? 'Continue' : 'Next'}
               </button>
             </form>
           )}

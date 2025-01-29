@@ -27,7 +27,7 @@ export default function BookSelector() {
 
   return (
     <div className="glass-card">
-      <h2 className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
+      <h2 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
         {isVotingPhase ? 'Book Voting' : 'Select Next Reader'}
       </h2>
 
@@ -49,6 +49,7 @@ export default function BookSelector() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
+            className="px-0 md:px-4"
           >
             <WheelSpinner />
           </motion.div>
@@ -60,11 +61,11 @@ export default function BookSelector() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="space-y-6"
+            className="space-y-4 md:space-y-6"
           >
             <div className="flex items-center gap-3">
-              <BookmarkIcon className="w-6 h-6 text-primary-500" />
-              <h3 className="text-xl font-semibold text-surface-900">
+              <BookmarkIcon className="w-5 md:w-6 h-5 md:h-6 text-primary-500" />
+              <h3 className="text-lg md:text-xl font-semibold text-surface-900">
                 {nextSelector.id === user?.id 
                   ? "It's Your Turn to Pick a Book!" 
                   : `Waiting for ${nextSelector.name} to Pick a Book`}

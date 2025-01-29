@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { 
   BookOpenIcon, SparklesIcon, 
   ChartBarIcon, HomeIcon,
@@ -15,6 +16,7 @@ import BookDiscussion from './components/BookDiscussion'
 import BookClubList from './components/BookClubList'
 import ClubStats from './components/ClubStats'
 import BookSetup from './components/BookSetup'
+import MobileNav from './components/MobileNav'
 import { useAuth } from './contexts/AuthContext'
 
 interface SidebarLinkProps {
@@ -42,9 +44,10 @@ function SidebarLink({ icon: Icon, label, isActive, onClick }: SidebarLinkProps)
 
 function AppContent() {
   const { user, bookClub, isLoading, logout } = useAuth()
-  const [activeTab, setActiveTab] = useState('dashboard')
   const [isSidebarOpen] = useState(true)
   const [copied, setCopied] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const handleCopyInviteCode = async () => {
     if (bookClub?.inviteCode) {
@@ -74,19 +77,19 @@ function AppContent() {
   }
 
   const navigation = [
-    { id: 'dashboard', label: 'Dashboard', icon: HomeIcon },
-    { id: 'books', label: 'Book List', icon: BookOpenIcon },
-    { id: 'stats', label: 'Club Stats', icon: ChartBarIcon },
+    { id: 'dashboard', label: 'Dashboard', icon: HomeIcon, path: '/' },
+    { id: 'books', label: 'Book List', icon: BookOpenIcon, path: '/books' },
+    { id: 'stats', label: 'Club Stats', icon: ChartBarIcon, path: '/stats' },
   ]
 
   return (
     <BookClubProvider>
       <div className="min-h-screen bg-surface-50 flex">
-        {/* Sidebar */}
+        {/* Sidebar - Hidden on mobile */}
         <motion.aside
           initial={false}
           animate={{ width: isSidebarOpen ? 280 : 80 }}
-          className="sticky top-0 h-screen bg-white border-r border-surface-200 p-4 flex flex-col"
+          className="sticky top-0 h-screen bg-white border-r border-surface-200 p-4 flex-col hidden md:flex"
         >
           <div className="flex items-center gap-3 mb-8">
             <span className="relative">
@@ -110,8 +113,8 @@ function AppContent() {
                 key={item.id}
                 icon={item.icon}
                 label={isSidebarOpen ? item.label : ''}
-                isActive={activeTab === item.id}
-                onClick={() => setActiveTab(item.id)}
+                isActive={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
               />
             ))}
           </nav>
@@ -156,24 +159,18 @@ function AppContent() {
         </motion.aside>
 
         {/* Main Content */}
-        <main className="flex-1 px-8 py-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="max-w-7xl mx-auto"
-            >
-              {activeTab === 'dashboard' && <Dashboard />}
-              {activeTab === 'books' && <BookManager />}
-              {activeTab === 'setup' && <BookSetup />}
-              {activeTab === 'discussion' && <BookDiscussion />}
-              {activeTab === 'stats' && <ClubStats />}
-              {/* Add other components for new tabs */}
-            </motion.div>
-          </AnimatePresence>
+        <main className="flex-1 px-4 md:px-8 pt-6 pb-20 md:py-6">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/books" element={<BookManager />} />
+            <Route path="/stats" element={<ClubStats />} />
+            <Route path="/setup" element={<BookSetup />} />
+            <Route path="/discussion" element={<BookDiscussion />} />
+          </Routes>
         </main>
+
+        {/* Mobile Navigation */}
+        <MobileNav />
       </div>
     </BookClubProvider>
   )
@@ -181,8 +178,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   )
 }

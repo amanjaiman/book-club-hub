@@ -216,11 +216,13 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
     const totalVotes = Object.keys(updatedBook.votes).length;
     if (totalVotes === votingMembers.length) {
       const vetoCount = Object.values(updatedBook.votes).filter(v => v === 'veto').length;
-      if (vetoCount === 0) {
-        // If approved, move directly to setup phase
+      // Check if majority of voters vetoed (50% or more)
+      if (vetoCount <= votingMembers.length / 2) {
+        // If less than majority vetoed, move to setup phase
         updatedBook.status = 'setup';
         setNextSelector(null);
       } else {
+        // If majority vetoed, reject the book
         updatedBook.status = 'vetoed';
       }
       console.log('All members voted. New status:', updatedBook.status);
