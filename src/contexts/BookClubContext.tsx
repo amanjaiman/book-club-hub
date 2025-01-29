@@ -59,6 +59,7 @@ interface BookClubContextType {
   clearDiscussionTopics: () => void;
   updateReadingProgress: (currentPage: number) => void;
   spinWheel: () => void;
+  selectNextReader: (memberId: string) => void;
   updateBookSetup: (bookId: string, meetings: Meeting[]) => void;
   startReading: () => void;
   stopReading: () => void;
@@ -286,6 +287,13 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
     setNextSelector(members[randomIndex]);
   };
 
+  const selectNextReader = (memberId: string) => {
+    const member = members.find(m => m.id === memberId);
+    if (member) {
+      setNextSelector(member);
+    }
+  };
+
   const updateBookSetup = (bookId: string, meetings: Meeting[]) => {
     if (!currentBook || currentBook.id !== bookId) return;
 
@@ -354,6 +362,7 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
     clearDiscussionTopics,
     updateReadingProgress,
     spinWheel,
+    selectNextReader,
     updateBookSetup,
     startReading,
     stopReading,
