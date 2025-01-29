@@ -50,6 +50,7 @@ interface BookClubContextType {
   bookHistory: Book[];
   members: Member[];
   nextSelector: Member | null;
+  refreshData: () => Promise<void>;
   addMember: (member: Member) => void;
   removeMember: (memberId: string) => void;
   proposeBook: (book: Omit<Book, 'id' | 'status' | 'votes' | 'discussions' | 'meetings'>) => void;
@@ -83,59 +84,80 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [nextSelector, setNextSelector] = useState<Member | null>(null);
 
-  // Load state from MongoDB
-  useEffect(() => {
+  // Function to load fresh state from MongoDB
+  const loadState = async () => {
     if (!bookClub || !user) return;
 
-    const loadState = async () => {
-      try {
-        console.log('Loading state for book club:', bookClub.id);
-        
-        // Initialize members from the book club
-        const memberPromises = bookClub.members.map(async (memberId) => {
-          const response = await fetch(`/.netlify/functions/users?id=${memberId}`);
-          if (!response.ok) {
-            console.error(`Failed to fetch member ${memberId}`);
-            return null;
-          }
-          const userData = await response.json();
-          if (!userData) {
-            console.error(`No user data found for member ${memberId}`);
-            return null;
-          }
-          return userData;
-        });
-
-        const bookClubMembers = (await Promise.all(memberPromises)).filter((member): member is Member => member !== null);
-        console.log('Loaded members:', bookClubMembers);
-        setMembers(bookClubMembers);
-
-        // Load book club state
-        const stateResponse = await fetch(`/.netlify/functions/bookclub-state/${bookClub.id}`);
-        if (!stateResponse.ok) throw new Error('Failed to fetch book club state');
-        
-        const state = await stateResponse.json();
-        console.log('Loaded state from MongoDB:', state);
-
-        // Set state all at once to avoid race conditions
-        if (state) {
-          setCurrentBook(state.currentBook || null);
-          setBookHistory(state.bookHistory || []);
-          
-          if (state.nextSelector) {
-            const selectorMember = bookClubMembers.find(m => m.id === state.nextSelector.id) || state.nextSelector;
-            setNextSelector(selectorMember);
-          } else {
-            setNextSelector(null);
-          }
+    try {
+      console.log('Loading state for book club:', bookClub.id);
+      
+      // Initialize members from the book club
+      const memberPromises = bookClub.members.map(async (memberId) => {
+        const response = await fetch(`/.netlify/functions/users?id=${memberId}`);
+        if (!response.ok) {
+          console.error(`Failed to fetch member ${memberId}`);
+          return null;
         }
-      } catch (error) {
-        console.error('Error loading book club state:', error);
+        const userData = await response.json();
+        if (!userData) {
+          console.error(`No user data found for member ${memberId}`);
+          return null;
+        }
+        return userData;
+      });
+
+      const bookClubMembers = (await Promise.all(memberPromises)).filter((member): member is Member => member !== null);
+      console.log('Loaded members:', bookClubMembers);
+      setMembers(bookClubMembers);
+
+      // Load book club state
+      const stateResponse = await fetch(`/.netlify/functions/bookclub-state/${bookClub.id}`);
+      if (!stateResponse.ok) throw new Error('Failed to fetch book club state');
+      
+      const state = await stateResponse.json();
+      console.log('Loaded state from MongoDB:', state);
+
+      // Set state all at once to avoid race conditions
+      if (state) {
+        setCurrentBook(state.currentBook || null);
+        setBookHistory(state.bookHistory || []);
+        
+        if (state.nextSelector) {
+          const selectorMember = bookClubMembers.find(m => m.id === state.nextSelector.id) || state.nextSelector;
+          setNextSelector(selectorMember);
+        } else {
+          setNextSelector(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading book club state:', error);
+    }
+  };
+
+  // Load state on mount and when bookClub changes
+  useEffect(() => {
+    loadState();
+  }, [bookClub?.id]);
+
+  // Refresh data every minute when the tab is visible
+  useEffect(() => {
+    if (!document.hidden) {
+      const interval = setInterval(loadState, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [bookClub?.id]);
+
+  // Refresh when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadState();
       }
     };
-
-    loadState();
-  }, [bookClub, user]);
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [bookClub?.id]);
 
   // Save state to MongoDB whenever it changes
   useEffect(() => {
@@ -167,6 +189,9 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
         if (!response.ok) {
           throw new Error('Failed to save state');
         }
+
+        // Fetch fresh data after saving to ensure we have the latest state
+        await loadState();
       } catch (error) {
         console.error('Error saving book club state:', error);
       }
@@ -353,6 +378,7 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
     bookHistory,
     members,
     nextSelector,
+    refreshData: loadState,
     addMember,
     removeMember,
     proposeBook,

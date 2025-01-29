@@ -40,22 +40,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [bookClub, setBookClub] = useState<BookClub | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount (we'll keep this for session persistence)
+  // Load only user from localStorage on mount (minimal session persistence)
   useEffect(() => {
     const storedUser = localStorage.getItem('current_user');
-    const storedBookClub = localStorage.getItem('current_bookclub');
-    
-    if (storedUser) setUser(JSON.parse(storedUser));
-    if (storedBookClub) setBookClub(JSON.parse(storedBookClub));
-    
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      // Fetch latest book club data if user exists
+      if (userData) {
+        fetch(`/.netlify/functions/bookclubs?userId=${userData.id}`)
+          .then(response => response.ok ? response.json() : null)
+          .then(userBookClubs => {
+            if (userBookClubs?.length > 0) {
+              setBookClub(userBookClubs[0]);
+            }
+          })
+          .catch(error => console.error('Error fetching book clubs:', error));
+      }
+    }
     setIsLoading(false);
   }, []);
 
-  // Save state to localStorage whenever it changes (for session persistence)
+  // Save only user to localStorage
   useEffect(() => {
     if (user) localStorage.setItem('current_user', JSON.stringify(user));
-    if (bookClub) localStorage.setItem('current_bookclub', JSON.stringify(bookClub));
-  }, [user, bookClub]);
+  }, [user]);
 
   const checkUserExists = async (email: string): Promise<boolean> => {
     try {
@@ -100,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setBookClub(null);
     localStorage.removeItem('current_user');
-    localStorage.removeItem('current_bookclub');
   };
 
   const createBookClub = async (name: string) => {
