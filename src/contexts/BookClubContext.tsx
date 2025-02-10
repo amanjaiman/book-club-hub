@@ -83,17 +83,19 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
   const [bookHistory, setBookHistory] = useState<Book[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [nextSelector, setNextSelector] = useState<Member | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Function to load fresh state from MongoDB
   const loadState = async () => {
-    if (!bookClub || !user) return;
+    if (!bookClub || !user || isLoading) return;
 
     try {
+      setIsLoading(true);
       console.log('Loading state for book club:', bookClub.id);
       
       // Initialize members from the book club
       const memberPromises = bookClub.members.map(async (memberId) => {
-        const response = await fetch(`/.netlify/functions/users?id=${memberId}`);
+        const response = await fetch(`/.netlify/edge-functions/users?id=${memberId}`);
         if (!response.ok) {
           console.error(`Failed to fetch member ${memberId}`);
           return null;
@@ -111,7 +113,7 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
       setMembers(bookClubMembers);
 
       // Load book club state
-      const stateResponse = await fetch(`/.netlify/functions/bookclub-state/${bookClub.id}`);
+      const stateResponse = await fetch(`/.netlify/edge-functions/bookclub-state/${bookClub.id}`);
       if (!stateResponse.ok) throw new Error('Failed to fetch book club state');
       
       const state = await stateResponse.json();
@@ -131,6 +133,8 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading book club state:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -141,27 +145,48 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
 
   // Refresh data every minute when the tab is visible
   useEffect(() => {
-    if (!document.hidden) {
-      const interval = setInterval(loadState, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [bookClub?.id]);
+    let interval: NodeJS.Timeout | null = null;
 
-  // Refresh when tab becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadState();
+    const startInterval = () => {
+      if (!document.hidden && !interval) {
+        interval = setInterval(loadState, 60000);
       }
     };
+
+    const stopInterval = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopInterval();
+      } else {
+        loadState();
+        startInterval();
+      }
+    };
+
+    // Start interval if tab is visible
+    startInterval();
     
+    // Set up visibility change handler
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
+    return () => {
+      stopInterval();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [bookClub?.id]);
 
   // Save state to MongoDB whenever it changes
   useEffect(() => {
     if (!bookClub) return;
+
+    let timeoutId: NodeJS.Timeout;
 
     const saveState = async () => {
       try {
@@ -181,7 +206,7 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
 
         console.log('Saving state to MongoDB:', state);
 
-        const response = await fetch(`/.netlify/functions/bookclub-state/${bookClub.id}`, {
+        const response = await fetch(`/.netlify/edge-functions/bookclub-state/${bookClub.id}`, {
           method: 'PATCH',
           body: JSON.stringify(state)
         });
@@ -189,15 +214,16 @@ export function BookClubProvider({ children }: { children: ReactNode }) {
         if (!response.ok) {
           throw new Error('Failed to save state');
         }
-
-        // Fetch fresh data after saving to ensure we have the latest state
-        await loadState();
       } catch (error) {
         console.error('Error saving book club state:', error);
       }
     };
 
-    saveState();
+    // Debounce save operations
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(saveState, 1000);
+
+    return () => clearTimeout(timeoutId);
   }, [bookClub, currentBook, bookHistory, nextSelector]);
 
   const addMember = (member: Member) => {

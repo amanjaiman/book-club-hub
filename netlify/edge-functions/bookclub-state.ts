@@ -1,5 +1,5 @@
-import { Handler } from '@netlify/functions';
-import { connectToDatabase } from './utils/mongodb';
+import { Context } from '@netlify/edge-functions';
+import { connectToDatabase } from '../shared/mongodb';
 
 interface Book {
   id: string;
@@ -51,23 +51,39 @@ interface BookClubState {
   nextSelector: Member | null;
 }
 
-export const handler: Handler = async (event) => {
-  // Extract book club ID from path
-  const bookClubId = event.path.split('/').pop();
+export default async function handler(request: Request, context: Context) {
+  // Set CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
+  // Handle OPTIONS request for CORS
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers
+    });
+  }
+
+  // Extract book club ID from URL
+  const url = new URL(request.url);
+  const bookClubId = url.pathname.split('/').pop();
   console.log('Handling request for book club:', bookClubId);
   
   if (!bookClubId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Book club ID is required' })
-    };
+    return new Response(JSON.stringify({ error: 'Book club ID is required' }), {
+      status: 400,
+      headers
+    });
   }
 
   const { db } = await connectToDatabase();
   const states = db.collection<BookClubState>('bookclub_states');
 
   try {
-    switch (event.httpMethod) {
+    switch (request.method) {
       case 'GET': {
         console.log('GET request for book club state');
         const state = await states.findOne({ bookClubId });
@@ -84,28 +100,21 @@ export const handler: Handler = async (event) => {
           };
           
           await states.insertOne(defaultState);
-          return {
-            statusCode: 200,
-            body: JSON.stringify(defaultState)
-          };
+          return new Response(JSON.stringify(defaultState), {
+            status: 200,
+            headers
+          });
         }
 
-        return {
-          statusCode: 200,
-          body: JSON.stringify(state)
-        };
+        return new Response(JSON.stringify(state), {
+          status: 200,
+          headers
+        });
       }
 
       case 'PATCH': {
         console.log('PATCH request for book club state');
-        if (!event.body) {
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ error: 'Request body is required' })
-          };
-        }
-
-        const updates = JSON.parse(event.body);
+        const updates = await request.json();
         console.log('Updating state with:', updates);
         
         // First get the existing state
@@ -130,29 +139,29 @@ export const handler: Handler = async (event) => {
         console.log('Update result:', result);
 
         if (!result) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ error: 'Book club state not found' })
-          };
+          return new Response(JSON.stringify({ error: 'Book club state not found' }), {
+            status: 404,
+            headers
+          });
         }
 
-        return {
-          statusCode: 200,
-          body: JSON.stringify(result)
-        };
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers
+        });
       }
 
       default:
-        return {
-          statusCode: 405,
-          body: JSON.stringify({ error: 'Method not allowed' })
-        };
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+          status: 405,
+          headers
+        });
     }
   } catch (error) {
     console.error('Error handling book club state:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' })
-    };
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers
+    });
   }
-}; 
+} 

@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       // Fetch latest book club data if user exists
       if (userData) {
-        fetch(`/.netlify/functions/bookclubs?userId=${userData.id}`)
+        fetch(`/.netlify/edge-functions/bookclubs?userId=${userData.id}`)
           .then(response => response.ok ? response.json() : null)
           .then(userBookClubs => {
             if (userBookClubs?.length > 0) {
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkUserExists = async (email: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/.netlify/functions/users?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`/.netlify/edge-functions/users?email=${encodeURIComponent(email)}`);
       if (!response.ok) throw new Error('Failed to check user');
       const user = await response.json();
       return !!user;
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, name?: string) => {
     try {
       // Try to find or create user in MongoDB
-      const response = await fetch('/.netlify/functions/users', {
+      const response = await fetch('/.netlify/edge-functions/users', {
         method: 'POST',
         body: JSON.stringify({ email, name })
       });
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
 
       // Check if user is part of any book clubs
-      const bookClubsResponse = await fetch(`/.netlify/functions/bookclubs?userId=${userData.id}`);
+      const bookClubsResponse = await fetch(`/.netlify/edge-functions/bookclubs?userId=${userData.id}`);
       if (!bookClubsResponse.ok) throw new Error('Failed to fetch book clubs');
       
       const userBookClubs = await bookClubsResponse.json();
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error('Must be logged in to create a book club');
 
     try {
-      const response = await fetch('/.netlify/functions/bookclubs', {
+      const response = await fetch('/.netlify/edge-functions/bookclubs', {
         method: 'POST',
         body: JSON.stringify({ name, ownerId: user.id })
       });
@@ -135,14 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Find the book club with this invite code
-      const response = await fetch(`/.netlify/functions/bookclubs?inviteCode=${inviteCode}`);
+      const response = await fetch(`/.netlify/edge-functions/bookclubs?inviteCode=${inviteCode}`);
       if (!response.ok) throw new Error('Failed to find book club');
       
       const bookClubToJoin = await response.json();
       if (!bookClubToJoin) throw new Error('Invalid invite code');
 
       // Add the user to the book club
-      const updateResponse = await fetch('/.netlify/functions/bookclubs', {
+      const updateResponse = await fetch('/.netlify/edge-functions/bookclubs', {
         method: 'PATCH',
         body: JSON.stringify({
           id: bookClubToJoin.id,
