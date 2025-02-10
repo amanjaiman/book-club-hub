@@ -17,10 +17,9 @@ export async function connectToDatabase() {
     };
   }
 
-  // Create a new MongoClient with options suitable for edge functions
   const client = await MongoClient.connect(MONGODB_URI, {
-    maxPoolSize: 1, // Reduce connection pool size for edge functions
-    serverSelectionTimeoutMS: 5000, // Reduce timeout for edge functions
+    maxPoolSize: 1,
+    serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 5000,
   });
   

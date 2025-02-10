@@ -1,5 +1,5 @@
 import { Context } from '@netlify/edge-functions';
-import { connectToDatabase } from '../edge-functions/mongodb';
+import { connectToDatabase } from './utils/mongodb';
 
 interface Book {
   id: string;
