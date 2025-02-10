@@ -1,5 +1,5 @@
 import { Context } from '@netlify/edge-functions';
-import { connectToDatabase } from '../shared/mongodb';
+import { connectToDatabase } from './mongodb';
 
 interface BookClub {
   id: string;
