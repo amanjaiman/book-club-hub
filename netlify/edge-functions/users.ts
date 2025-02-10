@@ -1,5 +1,4 @@
 import { Context } from '@netlify/edge-functions';
-import { MongoClient } from 'mongodb';
 
 interface User {
   id: string;
@@ -15,24 +14,15 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-let cachedClient: MongoClient | null = null;
-
 async function connectToDatabase() {
-  if (cachedClient) {
-    return {
-      client: cachedClient,
-      db: cachedClient.db(DB_NAME),
-    };
-  }
-
-  const client = await MongoClient.connect(MONGODB_URI, {
+  const { MongoClient } = await import('mongodb');
+  const client = new MongoClient(MONGODB_URI, {
     maxPoolSize: 1,
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 5000,
   });
-  
-  cachedClient = client;
 
+  await client.connect();
   return {
     client,
     db: client.db(DB_NAME),
